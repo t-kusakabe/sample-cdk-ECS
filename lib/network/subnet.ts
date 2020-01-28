@@ -7,43 +7,83 @@ interface NetworkSubnetStackProps extends cdk.StackProps {
   vpc: string;
 }
 
-
 export class NetworkSubnetStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: NetworkSubnetStackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'MyVpc', {
-      maxAzs: 2
+    // VPC
+    // const vpc = new ec2.Vpc(this, 'MyVpc', {
+    //   maxAzs: 2
+    // });
+
+    interface IAz {
+      availabilityZone: string;
+      cidrBlock: string[];
+      vpcId: string;
+    }
+
+    const azProps: IAz[] = [
+      {
+        'availabilityZone': 'ap-northeast-1a',
+        'cidrBlock': [
+          '10.0.10.0/24',
+          '10.0.11.0/24',
+          '10.0.12.0/24',
+          '10.0.13.0/24'
+        ],
+        'vpcId': ''
+      }
+    ];
+
+    const Subnets = azProps.forEach((props, index) => {
+      new ec2.Subnet(
+        this,
+        `scout-private-${props.availabilityZone.slice(-1)}-subnet-${index}`,
+        {
+          availabilityZone: props.availabilityZone,
+          cidrBlock: props.cidrBlock[index],
+          vpcId: props.vpcId
+        });
     });
 
+    // const publicSubnets = azProps.forEach(props => {
+    //   new ec2.PrivateSubnet(
+    //     this,
+    //     `scout-public-${props.availabilityZone.slice(-1)}-subnet`,
+    //     props
+    //   );
+    // });
 
-    // 後で分離
-    // const cluster = new ecs.Cluster(this, 'ECSCluster', {
-    //   vpc: vpc
+    // const privateSubnets = azProps.forEach(props => {
+    //   new ec2.PrivateSubnet(
+    //     this,
+    //     `scout-private-${props.availabilityZone.slice(-1)}-subnet`,
+    //     props);
     // });
 
 
 
-    const cluster = new ecs.Cluster(this, 'FargateCluster', {
-      vpc: vpc,
-    });
+    // TODO: 後で分離 ここからcluster
+    // const cluster = new ecs.Cluster(this, 'FargateCluster', {
+    //   vpc: vpc,
+    // });
 
-    cluster.addCapacity('DefaultAutoScalingGroupCapacity', {
-      instanceType: new ec2.InstanceType('t3.small'),
-      desiredCapacity: 3,
-    });
+    // cluster.addCapacity('DefaultAutoScalingGroupCapacity', {
+    //   instanceType: new ec2.InstanceType('t3.small'),
+    //   desiredCapacity: 3,
+    // });
 
-    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
+    // const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
 
-    taskDefinition.addContainer('DefaultContainer', {
-      image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
-      memoryLimitMiB: 512,
-    });
+    // taskDefinition.addContainer('DefaultContainer', {
+    //   image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
+    //   memoryLimitMiB: 512,
+    // });
 
-    const ecsService = new ecs.Ec2Service(this, 'Service', {
-      cluster,
-      taskDefinition,
-    });
+    // const ecsService = new ecs.Ec2Service(this, 'Service', {
+    //   cluster,
+    //   taskDefinition,
+    // });
 
 
 
